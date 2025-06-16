@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import {hasSearchedOnce, searchParams} from "../store/state"
 
   interface ISearchBox {
     isLoading: boolean;
@@ -8,10 +9,8 @@
   }
   let { value = $bindable(""), isLoading = false, onSearch} : ISearchBox = $props();
 
-  let useSynonyms = $state<boolean>(false);
-  let useFamilies = $state<boolean>(false);
-  // let prevSynonyms:boolean;
-  // let prevFamilies:boolean;
+  let useSynonyms = $derived($searchParams.useSynonyms);
+  let useFamilies = $derived($searchParams.useFamilies);
   
   const searchDeps = $derived(() => [useSynonyms, useFamilies] as const);
   let prevDeps: readonly [boolean, boolean] = [false, false];
@@ -28,9 +27,10 @@
 
   function triggerSearch(term = value.trim()) {
     if (!isLoading && term) {
-      onSearch(term, useSynonyms, useFamilies)
+      onSearch(term, useSynonyms, useFamilies);
       addRecentSearch(term);
       showSuggestions = false;
+      //hasSearchedOnce.set(true);  // Set flag on manual search
     }
   }
 
@@ -51,6 +51,7 @@
     inputRef.focus();
     updateFilteredSuggestions();
     showSuggestions = recentSearches.length > 0;
+    //hasSearchedOnce.set(false);  // Reset flag when input cleared
   }
 
   function adjustTextareaHeight() {
@@ -64,7 +65,6 @@
 
   function handlePaste() {
     requestAnimationFrame(() => {
-      //inputRef.scrollTop = inputRef.scrollHeight;
       adjustTextareaHeight();
     });
   }
@@ -112,24 +112,25 @@
       document.removeEventListener("pointerdown", handlePointerDownOutside);
   });
 
+  // --- Updated effect ---
   $effect(() => {
-    if (!mounted || isLoading || !value.trim()) return;
+    if (!mounted || isLoading || !value.trim()) return; // <-- check flag
 
-    // if (useSynonyms !== prevSynonyms || useFamilies !== prevFamilies) {
-    //   prevSynonyms = useSynonyms;
-    //   prevFamilies = useFamilies;
-    //   console.log('triggering search from effect')
-    //   triggerSearch();
-    // }
     const [currSynonyms, currFamilies] = searchDeps();
     const [prevSynonyms, prevFamilies] = prevDeps;
 
     if (currSynonyms !== prevSynonyms || currFamilies !== prevFamilies) {
       prevDeps = [currSynonyms, currFamilies];
-      triggerSearch();
+      // Trigger search only if we have done a search before or value is non-empty
+      console.log('effect hasSearchedOnce-',$hasSearchedOnce)
+      if ($hasSearchedOnce) {
+        console.log('trigger Searche-')
+        triggerSearch();
+      }
     }
   });
 </script>
+
 
 <div class="search-container" bind:this={containerRef}>
   <div
@@ -200,13 +201,13 @@
 
   <div class="toggles">
     <label class="switch">
-      <input type="checkbox" bind:checked={useSynonyms} />
+      <input type="checkbox" bind:checked={$searchParams.useSynonyms} />
       <span class="slider"></span>
       <span class="label-text">Use Synonyms</span>
     </label>
 
     <label class="switch">
-      <input type="checkbox" bind:checked={useFamilies} />
+      <input type="checkbox" bind:checked={$searchParams.useFamilies} />
       <span class="slider"></span>
       <span class="label-text">Use Families</span>
     </label>

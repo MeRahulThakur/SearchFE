@@ -2,6 +2,7 @@
   import LandingPage from './LandingPage.svelte';
   import ResultsPage from './ResultsPage.svelte';
   import { writable } from 'svelte/store';
+  import { hasSearchedOnce } from './store/state';
 
   const route = writable<'home' | 'results'>('home');
   const searchQuery = writable<string>('');
@@ -10,8 +11,8 @@
   const error = writable<string | null>(null);
 
   async function handleSearch(query: string, useSynonyms: boolean, useFamilies: boolean) {
-    console.log('useSynonyms-',useSynonyms)
-    console.log('useFamilies-',useFamilies)
+    console.log('handleSearch useSynonyms-',useSynonyms)
+    console.log('handleSearch useFamilies-',useFamilies)
     isLoading.set(true);
     searchQuery.set(query);
     results.set([]);
@@ -40,6 +41,7 @@
       error.set('Failed to fetch results.');
     } finally {
       isLoading.set(false);
+      hasSearchedOnce.set(true);
       route.set('results');
     }
   }
