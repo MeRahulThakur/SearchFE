@@ -3,7 +3,8 @@
   import Header from "./components/Header.svelte";
   import SearchBox from "./components/SearchBox.svelte";
   import Sidebar from "./components/Sidebar.svelte";
-    import { highlight } from "./helper";
+  import { highlight } from "./helper";
+    import { hasSearchedOnce } from "./store/state";
 
   interface IResultsPage {
     committedQuery: string;
@@ -70,6 +71,12 @@
     sidebarOpen = false;
     sidebarContent = null;
   }
+
+  $effect(() => {
+    if (!isLoading && (results.length > 0 || error)) {
+      hasSearchedOnce.set(true);
+    }
+  });
 </script>
 
 <Header title="Better Search">

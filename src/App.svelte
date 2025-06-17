@@ -41,7 +41,6 @@
       error.set('Failed to fetch results.');
     } finally {
       isLoading.set(false);
-      hasSearchedOnce.set(true);
       route.set('results');
     }
   }
