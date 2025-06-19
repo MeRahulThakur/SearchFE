@@ -4,7 +4,7 @@
   import SearchBox from "./components/SearchBox.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import { highlight } from "./helper";
-    import { hasSearchedOnce } from "./store/state";
+  import { hasSearchedOnce, searchParams } from "./store/state";
 
   interface IResultsPage {
     committedQuery: string;
@@ -12,10 +12,21 @@
     results: { title: string; description: string }[];
     error: string | null;
     onBack: () => void;
-    onSearch: (query: string, useSynonyms: boolean, useFamilies: boolean) => void;
+    onSearch: (
+      query: string,
+      useSynonyms: boolean,
+      useFamilies: boolean,
+    ) => void;
   }
 
-  let {committedQuery="",isLoading=false,results=[], error= null, onBack, onSearch}: IResultsPage = $props();
+  let {
+    committedQuery = "",
+    isLoading = false,
+    results = [],
+    error = null,
+    onBack,
+    onSearch,
+  }: IResultsPage = $props();
 
   let localQuery = $state(committedQuery);
 
@@ -26,7 +37,6 @@
     description: string;
     details?: string;
   } | null = $state(null);
-
 
   async function openSidebarWith(result: {
     title: string;
@@ -50,7 +60,7 @@
 
       // const data = await response.json();
       //Mocking api
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
       const data = { details: `Detailed explanation about: ${result.title}` };
 
       sidebarContent = {
@@ -72,6 +82,18 @@
     sidebarContent = null;
   }
 
+  function triggerSearch() {
+    onSearch(localQuery, false, false);
+  }
+
+  function resetSearch() {
+    localQuery = "";
+    hasSearchedOnce.set(false);
+    // ✅ Reset toggles:
+    searchParams.update(sp => ({ ...sp, useSynonyms: false, useFamilies: false }));
+    // Optionally: clear results if needed
+  }
+
   $effect(() => {
     if (!isLoading && (results.length > 0 || error)) {
       hasSearchedOnce.set(true);
@@ -80,43 +102,53 @@
 </script>
 
 <Header title="Better Search">
-  <SearchBox bind:value={localQuery} {isLoading} onSearch={onSearch} />
+  <SearchBox bind:value={localQuery} {isLoading} {onSearch} />
+  <div class="controls">
+    <button onclick={triggerSearch} disabled={isLoading || !localQuery.trim()}>
+      🔍 Search
+    </button>
+    <button onclick={resetSearch} disabled={!localQuery.trim()}>
+      ❌ Reset
+    </button>
+  </div>
   <!-- <Button onClick={onBack} ariaLabel="Go back to search">Back</Button> -->
 </Header>
 
 <main class="results-container">
-  <h2>Results for "{committedQuery}"</h2>
+  <h2 class="results-heading">Results for "{committedQuery}"</h2>
 
-  {#if error}
-    <p class="error-message" role="alert">{error}</p>
-  {:else if isLoading}
-    {#each Array(3) as _, i}
-      <div class="skeleton-card" aria-hidden="true">
-        <div class="skeleton-title"></div>
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line short"></div>
-      </div>
-    {/each}
-  {:else if results.length === 0}
-    <p class="no-results" role="alert">
-      No results found for "{committedQuery}".
-    </p>
-  {:else}
-    {#each results as result}
-      <div
-        class="result"
-        role="button"
-        tabindex="0"
-        onclick={() => openSidebarWith(result)}
-        onkeydown={(e) => e.key === "Enter" && openSidebarWith(result)}
-        aria-label={`View details for ${result.title}`}
-      >
-        <h3>{result.title}</h3>
-        <!-- <p>{result.description}</p> -->
-        <p>{@html highlight(result.description, committedQuery)}</p>
-      </div>
-    {/each}
-  {/if}
+  <div class="results-list">
+    {#if error}
+      <p class="error-message" role="alert">{error}</p>
+    {:else if isLoading}
+      {#each Array(3) as _, i}
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+      {/each}
+    {:else if results.length === 0}
+      <p class="no-results" role="alert">
+        No results found for "{committedQuery}".
+      </p>
+    {:else}
+      {#each results as result}
+        <div
+          class="result"
+          role="button"
+          tabindex="0"
+          onclick={() => openSidebarWith(result)}
+          onkeydown={(e) => e.key === "Enter" && openSidebarWith(result)}
+          aria-label={`View details for ${result.title}`}
+        >
+          <h3>{result.title}</h3>
+          <!-- <p>{result.description}</p> -->
+          <p>{@html highlight(result.description, committedQuery)}</p>
+        </div>
+      {/each}
+    {/if}
+  </div>
 </main>
 
 <Sidebar open={sidebarOpen} onClose={closeSidebar}>
@@ -127,13 +159,13 @@
       <div class="skeleton-line"></div>
       <div class="skeleton-line short"></div>
     </div>
-    <br>
+    <br />
     <div class="sidebar-skeleton">
       <div class="skeleton-title"></div>
       <div class="skeleton-line"></div>
       <div class="skeleton-line short"></div>
     </div>
-    <br>
+    <br />
     <div class="sidebar-skeleton">
       <div class="skeleton-title"></div>
       <div class="skeleton-line"></div>
@@ -148,7 +180,34 @@
 </Sidebar>
 
 <style>
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    justify-content: center;
+  }
+
   .results-container {
+    position: relative;
+    height: 100%; /* make sure container takes full height */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* prevent overflow outside */
+  }
+
+  .results-heading {
+    position: sticky;
+    top: 0;
+    background: #fff; /* match page background */
+    z-index: 10;
+    padding: 0.75rem 1.2rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .results-list {
+    overflow-y: auto;
+    flex: 1;
     padding: 0.5rem 1.2rem;
   }
   .result {
