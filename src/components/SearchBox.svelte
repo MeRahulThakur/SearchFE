@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {hasSearchedOnce, searchParams} from "../store/state"
+  import Switch from "./Switch.svelte";
 
   interface ISearchBox {
     isLoading: boolean;
@@ -200,7 +201,7 @@
   </div>
 
   <div class="toggles">
-    <label class="switch">
+    <!-- <label class="switch">
       <input type="checkbox" bind:checked={$searchParams.useSynonyms} />
       <span class="slider"></span>
       <span class="label-text">Use Synonyms</span>
@@ -210,7 +211,9 @@
       <input type="checkbox" bind:checked={$searchParams.useFamilies} />
       <span class="slider"></span>
       <span class="label-text">Use Families</span>
-    </label>
+    </label> -->
+    <Switch param="useSynonyms" label="Use Synonyms" size="small" />
+    <Switch param="useFamilies" label="Use Families" size="large" />
   </div>
 </div>
 

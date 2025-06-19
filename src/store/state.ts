@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 
-interface ISearchParams {
+export interface ISearchParams {
   useFamilies: boolean;
   useSynonyms: boolean;
 }
