@@ -32,22 +32,29 @@
 
 <style>
   .switch {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     cursor: pointer;
     gap: 0.5rem;
     font-size: 0.95rem;
+    position: relative;
   }
 
   .switch input {
-    display: none;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
   }
 
   .slider {
+    display: inline-block;
     position: relative;
     background: #ccc;
     border-radius: 20px;
     transition: background 0.3s;
+    cursor: pointer;
+    outline: none;
   }
 
   /* Default dimensions = medium */
@@ -102,6 +109,10 @@
     background: white;
     border-radius: 50%;
     transition: transform 0.3s;
+  }
+
+  input:focus + .slider {
+    box-shadow: 0 0 0 3px rgba(21, 156, 228, 0.4);
   }
 
   .label-text {
